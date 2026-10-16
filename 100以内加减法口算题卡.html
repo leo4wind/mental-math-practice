@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>100以内加减法口算题卡（A4打印 · 每页50题 · 一次10页）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #e9edf3; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    color: #000;
+  }
+
+  /* ============ 屏幕顶部工具栏（打印时隐藏） ============ */
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    padding: 10px 18px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  }
+  .toolbar h1 { font-size: 17px; white-space: nowrap; }
+  .toolbar label { display: flex; align-items: center; gap: 6px; font-size: 14px; white-space: nowrap; }
+  .toolbar select, .toolbar input[type=number] {
+    font-size: 14px; padding: 5px 6px; border: 1px solid #b9c2ce; border-radius: 6px; background: #fff;
+  }
+  .toolbar input[type=number] { width: 68px; text-align: center; }
+  .btn {
+    border: 0; border-radius: 8px; cursor: pointer; font-size: 15px; padding: 9px 18px; color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  }
+  .btn:active { transform: translateY(1px); }
+  #btnRefresh { background: #2f6fed; }
+  #btnRefresh:hover { background: #1e5ad0; }
+  #btnPrint   { background: #16a34a; }
+  #btnPrint:hover   { background: #128a3e; }
+  .toolbar .hint {
+    flex-basis: 100%; color: #8a5a00; background: #fff7e0; border: 1px solid #f0d894;
+    border-radius: 6px; padding: 5px 10px; font-size: 12.5px; line-height: 1.7;
+  }
+  .toolbar .hint b { color: #c2410c; }
+
+  /* ============ 页面（sheet） ============ */
+  #sheets { padding: 16px 8px 30px; }
+
+  .page {
+    position: relative;
+    width: 210mm; height: 297mm;
+    background: #fff;
+    margin: 0 auto 16px;
+    padding: 9mm 12mm 5mm;
+    display: flex; flex-direction: column;
+    box-shadow: 0 3px 10px rgba(0,0,0,.22);
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* —— 页头：标题 + 姓名日期 —— */
+  .page-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 2.5mm; margin-bottom: 3mm;
+    border-bottom: 1.2px solid #000;
+    flex: none;
+  }
+  .ptitle {
+    font-family: "KaiTi", "STKaiti", "SimSun", serif;
+    font-size: 22px; font-weight: 700; letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .pmeta { font-size: 13px; white-space: nowrap; }
+  .pmeta .u {
+    display: inline-block; width: 16mm; height: 3mm;
+    border-bottom: 1px solid #000; vertical-align: baseline;
+  }
+  .pmeta .gap { display: inline-block; width: 5mm; }
+
+  /* —— 题目区：5 列 × N 行 —— */
+  .problems {
+    flex: 1 1 0; min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(var(--rows, 10), minmax(0, 1fr));
+  }
+  .prob {
+    display: flex; align-items: flex-end;
+    font-family: "Times New Roman", "Georgia", "SimSun", serif;
+    font-size: 19px; font-weight: 700;
+    padding: 0 2mm 1mm 3mm;
+    white-space: nowrap;
+  }
+  .prob.compact { font-size: 16px; }
+  .prob .expr { letter-spacing: .3px; }
+  .prob .ans {
+    flex: 1 1 auto; height: 0;
+    margin: 0 1mm 0 2.5mm;
+    border-bottom: 1.4px solid #000;
+    min-width: 6mm;
+  }
+
+  /* —— 页脚 —— */
+  .page-foot {
+    flex: none;
+    display: flex; justify-content: flex-end;
+    font-size: 11px; color: #000;
+    border-top: 1px solid #000;
+    padding-top: 1.5mm; margin-top: 1.5mm;
+  }
+
+  /* ============ 打印样式 ============ */
+  @page { size: A4 portrait; margin: 0; }
+
+  @media print {
+    html, body { background: #fff; }
+    .toolbar { display: none !important; }
+    #sheets { padding: 0; }
+    .page {
+      margin: 0; box-shadow: none;
+      width: 210mm; height: 297mm; min-height: 297mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="toolbar">
+  <h1>📄 100以内加减法 · 口算题卡</h1>
+  <label>题型
+    <select id="mode">
+      <option value="add">加法</option>
+      <option value="sub">减法</option>
+      <option value="mixed">加减混合</option>
+      <option value="grade2" selected>二年级混合（加减+乘法）</option>
+    </select>
+  </label>
+  <label>页数 <input id="pages" type="number" value="10" min="1" max="30"></label>
+  <label>每页题数 <input id="per" type="number" value="50" min="10" max="100" step="5"></label>
+  <button id="btnRefresh" class="btn" type="button">🔄 换一批题目</button>
+  <button id="btnPrint" class="btn" type="button">🖨️ 打印（一次打印全部页）</button>
+  <div class="hint">
+    打印设置：纸张选 <b>A4</b>、边距选 <b>「无 / None」</b>、取消勾选 <b>「页眉和页脚」</b>、缩放 <b>100%</b>，这样正好一页一张、不多不少。
+    当前共 <b id="info">10 页 × 50 题 = 500 题</b>。点「换一批题目」即可重新随机出整套题。
+  </div>
+</header>
+
+<main id="sheets"></main>
+
+<script>
+(function () {
+  'use strict';
+  const sheets   = document.getElementById('sheets');
+  const modeSel  = document.getElementById('mode');
+  const pagesNum = document.getElementById('pages');
+  const perNum   = document.getElementById('per');
+  const infoEl   = document.getElementById('info');
+  const btnRefresh = document.getElementById('btnRefresh');
+  const btnPrint   = document.getElementById('btnPrint');
+
+  const COLS = 5;
+  const TITLES = {
+    add:   '100以内加法口算',
+    sub:   '100以内减法口算',
+    mixed: '100以内加减法口算',
+    grade2: '二年级混合口算（加减+乘法）'
+  };
+
+  const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+  /* 加法：和 2~100，两个加数都 ≥ 1 */
+  function genAdd() {
+    const s = randInt(2, 100);
+    const a = randInt(1, s - 1);
+    return { a: a, op: '+', b: s - a };
+  }
+
+  /* 减法：被减数 10~100，结果 ≥ 0 且 ≠ 全等易题 */
+  function genSub() {
+    const a = randInt(10, 100);
+    const b = randInt(1, a - 1);
+    return { a: a, op: '−', b: b };
+  }
+
+  /* 乘法：两个因数都是 2~9（十以内乘法口诀，不含 1） */
+  function genMul() {
+    const a = randInt(2, 9);
+    const b = randInt(2, 9);
+    return { a: a, op: '×', b: b };
+  }
+
+  function pickOne(mode) {
+    if (mode === 'add') return genAdd();
+    if (mode === 'sub') return genSub();
+    if (mode === 'mul') return genMul();
+    return Math.random() < 0.5 ? genAdd() : genSub();
+  }
+
+  const keyOf = t => t.a + ' ' + t.op + ' ' + t.b;
+
+  /* 生成一页题目列表 */
+  function onePageProblems(mode, count, cols, rows) {
+    if (mode === 'grade2') {
+      /* 二年级混合：按列生成，每列 rows 题，其中 60% 加减法，40% 乘法；
+         默认每列 10 题，即 6 道加减 + 4 道乘法，总题数不变 */
+      const addCountPerCol = Math.round(rows * 0.6);
+      const mulCountPerCol = rows - addCountPerCol;
+      const colsData = [];
+      for (let c = 0; c < cols; c++) {
+        const col = [];
+        for (let i = 0; i < addCountPerCol; i++) {
+          col.push(Math.random() < 0.5 ? genAdd() : genSub());
+        }
+        for (let i = 0; i < mulCountPerCol; i++) {
+          col.push(genMul());
+        }
+        /* 每列内部打乱，避免题型集中在一块 */
+        col.sort(() => Math.random() - 0.5);
+        colsData.push(col);
+      }
+      /* 转置为行优先扁平数组，供 CSS grid 按行填充 */
+      const list = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (colsData[c][r]) list.push(colsData[c][r]);
+        }
+      }
+      return list;
+    }
+
+    const seen = new Set();
+    const list = [];
+    let guard = 0;
+    while (list.length < count && guard < count * 300) {
+      guard++;
+      const t = pickOne(mode);
+      const k = keyOf(t);
+      if (!seen.has(k)) { seen.add(k); list.push(t); }
+    }
+    return list;
+  }
+
+  function build() {
+    const mode = modeSel.value;
+    let pages = parseInt(pagesNum.value, 10);
+    let per   = parseInt(perNum.value, 10);
+    if (!Number.isFinite(pages) || pages < 1) pages = 10;
+    if (!Number.isFinite(per) || per < 5)     per   = 50;
+    pages = Math.min(30, pages);
+    per   = Math.min(100, Math.max(5, per));
+    pagesNum.value = pages;
+    perNum.value   = per;
+
+    const rows = Math.ceil(per / COLS);
+    const compact = per >= 60 ? ' compact' : '';
+    infoEl.textContent = pages + ' 页 × ' + per + ' 题 = ' + (pages * per) + ' 题';
+
+    let html = '';
+    for (let p = 1; p <= pages; p++) {
+      const list = onePageProblems(mode, per, COLS, rows);
+      const cells = list.map(t =>
+        '<div class="prob' + compact + '"><span class="expr">' +
+        t.a + ' ' + t.op + ' ' + t.b + ' =</span><span class="ans"></span></div>'
+      ).join('');
+
+      html +=
+        '<section class="page">' +
+          '<div class="page-head">' +
+            '<div class="ptitle">' + TITLES[mode] + '</div>' +
+            '<div class="pmeta">分数：<i class="u"></i><i class="gap"></i>日期：<i class="u"></i><i class="gap"></i>用时：<i class="u"></i></div>' +
+          '</div>' +
+          '<div class="problems" style="--rows:' + rows + '">' + cells + '</div>' +
+          '<div class="page-foot">' +
+            '<span>第 ' + p + ' 页 / 共 ' + pages + ' 页</span>' +
+          '</div>' +
+        '</section>';
+    }
+    sheets.innerHTML = html;
+  }
+
+  btnRefresh.addEventListener('click', build);
+  btnPrint.addEventListener('click', function () { window.print(); });
+  [modeSel, pagesNum, perNum].forEach(el => el.addEventListener('change', build));
+
+  build();
+})();
+</script>
+</body>
+</html>
